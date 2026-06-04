@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚨 비상버튼</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+  :root {
+    --red: #ff1a1a;
+    --red-dark: #cc0000;
+    --red-glow: #ff4444;
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --border: #1e1e1e;
+    --text: #f0f0f0;
+    --text-dim: #666;
+    --yellow: #ffcc00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 배경 스캔라인 효과 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.015) 2px,
+      rgba(255,255,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 40px 20px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  /* 헤더 */
+  .header {
+    text-align: center;
+  }
+
+  .header h1 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    letter-spacing: 0.08em;
+    color: var(--red);
+    text-shadow:
+      0 0 20px rgba(255,26,26,0.8),
+      0 0 40px rgba(255,26,26,0.4);
+    animation: titlePulse 3s ease-in-out infinite;
+  }
+
+  .header p {
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+  }
+
+  /* 경보 오버레이 */
+  .alarm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,26,26,0.12);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 999;
+    transition: opacity 0.1s;
+  }
+  .alarm-overlay.active {
+    animation: flashRed 0.5s steps(1) infinite;
+  }
+  @keyframes flashRed {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+
+  /* 버튼 섹션 */
+  .button-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* 메인 비상버튼 */
+  .emergency-btn-wrap {
+    position: relative;
+    width: 200px;
+    height: 200px;
+  }
+
+  /* 링 애니메이션 */
+  .ring {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 2px solid var(--red);
+    opacity: 0;
+    animation: ringPulse 2.5s ease-out infinite;
+  }
+  .ring:nth-child(2) { animation-delay: 0.8s; }
+  .ring:nth-child(3) { animation-delay: 1.6s; }
+
+  @keyframes ringPulse {
+    0% { transform: scale(0.85); opacity: 0.7; }
+    100% { transform: scale(1.3); opacity: 0; }
+  }
+
+  .ring.alarming {
+    border-color: var(--yellow);
+    animation: ringAlarm 0.4s ease-out infinite;
+  }
+  .ring.alarming:nth-child(2) { animation-delay: 0.13s; }
+  .ring.alarming:nth-child(3) { animation-delay: 0.26s; }
+
+  @keyframes ringAlarm {
+    0% { transform: scale(0.85); opacity: 1; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+
+  .emergency-btn {
+    position: relative;
+    z-index: 2;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: radial-gradient(circle at 35% 35%, #ff3333, var(--red-dark) 70%);
+    box-shadow:
+      0 0 0 6px #1a0000,
+      0 0 0 10px #2a0000,
+      0 8px 40px rgba(255,26,26,0.6),
+      inset 0 4px 12px rgba(255,255,255,0.15),
+      inset 0 -4px 12px rgba(0,0,0,0.5);
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .emergency-btn:hover {
+    box-shadow:
+      0 0 0 6px #1a0000,
+      0 0 0 10px #2a0000,
+      0 12px 50px rgba(255,26,26,0.8),
+      inset 0 4px 12px rgba(255,255,255,0.2),
+      inset 0 -4px 12px rgba(0,0,0,0.5);
+  }
+
+  .emergency-btn:active {
+    transform: scale(0.95) translateY(3px);
+    box-shadow:
+      0 0 0 6px #1a0000,
+      0 0 0 10px #2a0000,
+      0 4px 20px rgba(255,26,26,0.5),
+      inset 0 2px 8px rgba(0,0,0,0.6),
+      inset 0 -2px 4px rgba(255,255,255,0.05);
+  }
+
+  .emergency-btn.alarming {
+    background: radial-gradient(circle at 35% 35%, #ffee00, #ffaa00 70%);
+    box-shadow:
+      0 0 0 6px #1a1000,
+      0 0 0 10px #2a1a00,
+      0 8px 50px rgba(255,200,0,0.9),
+      inset 0 4px 12px rgba(255,255,255,0.25),
+      inset 0 -4px 12px rgba(0,0,0,0.4);
+    animation: btnShake 0.15s ease-in-out infinite alternate;
+  }
+
+  @keyframes btnShake {
+    from { transform: rotate(-1deg); }
+    to { transform: rotate(1deg); }
+  }
+
+  .btn-icon { font-size: 3rem; line-height: 1; }
+  .btn-text {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+
+  /* 해제 버튼 */
+  .cancel-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: var(--text-dim);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    padding: 8px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: none;
+  }
+
+  .cancel-btn.visible {
+    display: block;
+  }
+
+  .cancel-btn:hover {
+    border-color: #555;
+    color: var(--text);
+  }
+
+  /* 상태 표시 */
+  .status-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 28px;
+    text-align: center;
+    width: 100%;
+  }
+
+  .status-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .status-text {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #3dff7a;
+    letter-spacing: 0.05em;
+  }
+
+  .status-text.danger {
+    color: var(--yellow);
+    animation: textBlink 0.5s steps(1) infinite;
+  }
+
+  @keyframes textBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .status-time {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #444;
+  }
+
+  /* 접속자 수 */
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  .online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3dff7a;
+    box-shadow: 0 0 6px #3dff7a;
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* 하단 안내 */
+  .footer-note {
+    font-size: 0.7rem;
+    color: #333;
+    text-align: center;
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<div class="alarm-overlay" id="alarmOverlay"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>🚨 비상버튼</h1>
+    <p>Emergency Alert System</p>
+  </div>
+
+  <div class="button-section">
+    <div class="emergency-btn-wrap">
+      <div class="ring" id="r1"></div>
+      <div class="ring" id="r2"></div>
+      <div class="ring" id="r3"></div>
+      <button class="emergency-btn" id="emergencyBtn" onclick="triggerAlarm()">
+        <span class="btn-icon" id="btnIcon">🆘</span>
+        <span class="btn-text" id="btnText">비상!</span>
+      </button>
+    </div>
+
+    <button class="cancel-btn" id="cancelBtn" onclick="cancelAlarm()">
+      ■ 경보 해제
+    </button>
+  </div>
+
+  <div class="status-panel">
+    <div class="status-label">현재 상태</div>
+    <div class="status-text" id="statusText">✅ 정상</div>
+    <div class="status-time" id="statusTime"></div>
+  </div>
+
+  <div class="online-badge">
+    <div class="online-dot"></div>
+    <span id="onlineCount">연결 중...</span>
+  </div>
+
+  <div class="footer-note">
+    버튼을 누르면 이 페이지를 열어둔<br>
+    모든 사람에게 경보가 울립니다
+  </div>
+</div>
+
+<audio id="alarmAudio" src="alarm.mp3" preload="auto" loop></audio>
+
+<!-- Firebase SDK (Realtime Database 포함) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAAy7Ktrbn3aMryN9rb3qBZyUV2NXafjwg",
+    authDomain: "lumberjack-re-derboard.firebaseapp.com",
+    projectId: "lumberjack-re-derboard",
+    storageBucket: "lumberjack-re-derboard.firebasestorage.app",
+    messagingSenderId: "929337159569",
+    appId: "1:929337159569:web:e475c7077905efaaae7430",
+    databaseURL: "https://lumberjack-re-derboard-default-rtdb.firebaseio.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  const alarmRef = ref(db, 'emergency/alarm');
+  const onlineRef = ref(db, 'emergency/online');
+
+  let myId = null;
+  let isAlarming = false;
+
+  // 익명 로그인 후 온라인 상태 등록
+  signInAnonymously(auth).then((cred) => {
+    myId = cred.user.uid;
+    const myOnlineRef = ref(db, `emergency/online/${myId}`);
+    set(myOnlineRef, true);
+
+    // 페이지 떠날 때 제거
+    window.addEventListener('beforeunload', () => {
+      set(myOnlineRef, null);
+    });
+
+    // 온라인 인원 감시
+    onValue(onlineRef, (snap) => {
+      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+      document.getElementById('onlineCount').textContent = `${count}명 접속 중`;
+    });
+  });
+
+  // 경보 상태 실시간 감시
+  onValue(alarmRef, (snap) => {
+    const data = snap.val();
+    if (data && data.active) {
+      activateAlarmUI(data.triggeredAt);
+    } else {
+      deactivateAlarmUI();
+    }
+  });
+
+  function activateAlarmUI(ts) {
+    if (isAlarming) return;
+    isAlarming = true;
+
+    const audio = document.getElementById('alarmAudio');
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+      // 자동재생 차단 시 클릭 유도
+      document.body.addEventListener('click', () => audio.play(), { once: true });
+    });
+
+    document.getElementById('emergencyBtn').classList.add('alarming');
+    document.getElementById('btnIcon').textContent = '🔴';
+    document.getElementById('btnText').textContent = '경보중!';
+    document.getElementById('cancelBtn').classList.add('visible');
+    document.getElementById('alarmOverlay').classList.add('active');
+
+    const rings = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+    rings.forEach(r => r.classList.add('alarming'));
+
+    document.getElementById('statusText').textContent = '🚨 경보 발령 중!';
+    document.getElementById('statusText').classList.add('danger');
+
+    if (ts) {
+      const d = new Date(ts);
+      document.getElementById('statusTime').textContent =
+        `발령: ${d.toLocaleTimeString('ko-KR')}`;
+    }
+
+    document.title = '🚨 경보 발령 중!';
+  }
+
+  function deactivateAlarmUI() {
+    if (!isAlarming) return;
+    isAlarming = false;
+
+    document.getElementById('alarmAudio').pause();
+    document.getElementById('alarmAudio').currentTime = 0;
+
+    document.getElementById('emergencyBtn').classList.remove('alarming');
+    document.getElementById('btnIcon').textContent = '🆘';
+    document.getElementById('btnText').textContent = '비상!';
+    document.getElementById('cancelBtn').classList.remove('visible');
+    document.getElementById('alarmOverlay').classList.remove('active');
+
+    const rings = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+    rings.forEach(r => r.classList.remove('alarming'));
+
+    document.getElementById('statusText').textContent = '✅ 정상';
+    document.getElementById('statusText').classList.remove('danger');
+    document.getElementById('statusTime').textContent = '';
+    document.title = '🚨 비상버튼';
+  }
+
+  // 전역으로 노출
+  window.triggerAlarm = () => {
+    set(alarmRef, {
+      active: true,
+      triggeredAt: Date.now()
+    });
+  };
+
+  window.cancelAlarm = () => {
+    set(alarmRef, { active: false });
+  };
+</script>
+
+</body>
+</html>
