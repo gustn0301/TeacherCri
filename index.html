@@ -336,15 +336,12 @@
       <div class="ring" id="r1"></div>
       <div class="ring" id="r2"></div>
       <div class="ring" id="r3"></div>
-      <button class="emergency-btn" id="emergencyBtn" onclick="triggerAlarm()">
+      <button class="emergency-btn" id="emergencyBtn" onclick="toggleAlarm()">
         <span class="btn-icon" id="btnIcon">🆘</span>
         <span class="btn-text" id="btnText">비상!</span>
       </button>
     </div>
 
-    <button class="cancel-btn" id="cancelBtn" onclick="cancelAlarm()">
-      ■ 경보 해제
-    </button>
   </div>
 
   <div class="status-panel">
@@ -359,8 +356,8 @@
   </div>
 
   <div class="footer-note">
-    버튼을 누르면 이 페이지를 열어둔<br>
-    모든 사람에게 경보가 울립니다
+    버튼을 누르면 경보 발령 / 다시 누르면 해제<br>
+    모든 접속자에게 동시에 적용됩니다
   </div>
 </div>
 
@@ -433,8 +430,7 @@
 
     document.getElementById('emergencyBtn').classList.add('alarming');
     document.getElementById('btnIcon').textContent = '🔴';
-    document.getElementById('btnText').textContent = '경보중!';
-    document.getElementById('cancelBtn').classList.add('visible');
+    document.getElementById('btnText').textContent = '눌러서 해제';
     document.getElementById('alarmOverlay').classList.add('active');
 
     const rings = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
@@ -462,7 +458,6 @@
     document.getElementById('emergencyBtn').classList.remove('alarming');
     document.getElementById('btnIcon').textContent = '🆘';
     document.getElementById('btnText').textContent = '비상!';
-    document.getElementById('cancelBtn').classList.remove('visible');
     document.getElementById('alarmOverlay').classList.remove('active');
 
     const rings = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
@@ -475,15 +470,15 @@
   }
 
   // 전역으로 노출
-  window.triggerAlarm = () => {
-    set(alarmRef, {
-      active: true,
-      triggeredAt: Date.now()
-    });
-  };
-
-  window.cancelAlarm = () => {
-    set(alarmRef, { active: false });
+  window.toggleAlarm = () => {
+    if (isAlarming) {
+      set(alarmRef, { active: false });
+    } else {
+      set(alarmRef, {
+        active: true,
+        triggeredAt: Date.now()
+      });
+    }
   };
 </script>
 
